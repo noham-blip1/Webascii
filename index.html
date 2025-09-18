@@ -9,8 +9,8 @@
       color: white;
       font-family: monospace;
       white-space: pre;
-      line-height: 6px;   /* espace vertical réduit */
-      font-size: 6px;     /* caractères plus petits = plus de détails */
+      line-height: 6px;
+      font-size: 6px;
       text-align: center;
       margin: 0;
       padding: 0;
@@ -18,37 +18,51 @@
     #ascii {
       display: inline-block;
     }
+    #startBtn {
+      margin-top: 20px;
+      font-size: 18px;
+      padding: 10px 20px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <pre id="ascii">Chargement...</pre>
+  <button id="startBtn">🎥 Démarrer la caméra</button>
+  <pre id="ascii" style="display:none;">Chargement...</pre>
 
-  <!-- vidéo + canvas cachés -->
-  <video id="video" autoplay playsinline style="display:none;"></video>
+  <video id="video" playsinline style="display:none;"></video>
   <canvas id="canvas" style="display:none;"></canvas>
 
   <script>
+    const startBtn = document.getElementById("startBtn");
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
     const ascii = document.getElementById("ascii");
 
-    // Palette ASCII (de clair → sombre)
     const chars = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
-    // Webcam
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then(stream => {
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         video.srcObject = stream;
-      })
-      .catch(err => {
+        video.play();
+        startBtn.style.display = "none";
+        ascii.style.display = "block";
+        frameToAscii();
+      } catch (err) {
         ascii.textContent = "❌ Webcam non accessible.";
         console.error(err);
-      });
+      }
+    }
 
     function frameToAscii() {
-      const width = 180;   // Largeur ASCII (augmentée)
-      const height = 90;   // Hauteur ASCII (augmentée)
+      const width = 160;   // adapte pour iPad
+      const height = 90;
 
       canvas.width = width;
       canvas.height = height;
@@ -64,7 +78,6 @@
           const g = frame.data[offset + 1];
           const b = frame.data[offset + 2];
 
-          // niveau de gris
           const brightness = (r + g + b) / 3;
           const charIndex = Math.floor((brightness / 255) * (chars.length - 1));
           asciiImage += chars[charIndex];
@@ -76,9 +89,7 @@
       requestAnimationFrame(frameToAscii);
     }
 
-    video.addEventListener("play", () => {
-      frameToAscii();
-    });
+    startBtn.addEventListener("click", startCamera);
   </script>
 </body>
 </html>
