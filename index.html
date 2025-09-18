@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Webcam ASCII Live</title>
+  <style>
+    body {
+      background: black;
+      color: white;
+      font-family: monospace;
+      white-space: pre;
+      line-height: 7px;   /* ajuster l'espacement vertical */
+      font-size: 7px;     /* taille des caractères */
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    #ascii {
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <pre id="ascii">Chargement...</pre>
+
+  <!-- vidéo et canvas cachés -->
+  <video id="video" autoplay playsinline style="display:none;"></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const ascii = document.getElementById("ascii");
+
+    // Palette ASCII avec plus de nuances pour plus de détails
+    const chars = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+
+    // Demande accès à la webcam
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        ascii.textContent = "❌ Impossible d'accéder à la webcam.";
+        console.error(err);
+      });
+
+    function frameToAscii() {
+      const width = 120; // largeur en caractères
+      const height = 60; // hauteur en lignes
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(video, 0, 0, width, height);
+      const frame = ctx.getImageData(0, 0, width, height);
+      let asciiImage = "";
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const offset = (y * width + x) * 4;
+          const r = frame.data[offset];
+          const g = frame.data[offset + 1];
+          const b = frame.data[offset + 2];
+
+          // conversion en niveau de gris
+          const brightness = (r + g + b) / 3;
+          const charIndex = Math.floor((brightness / 255) * (chars.length - 1));
+          asciiImage += chars[charIndex];
+        }
+        asciiImage += "\n";
+      }
+
+      ascii.textContent = asciiImage;
+      requestAnimationFrame(frameToAscii);
+    }
+
+    video.addEventListener("play", () => {
+      frameToAscii();
+    });
+  </script>
+</body>
+</html>
